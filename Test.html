@@ -1,0 +1,781 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no" />
+  <title>A Special Postcard For You</title>
+  <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:ital,wght@0,500;0,600;1,400&family=Dancing+Script:wght@600;700&display=swap" rel="stylesheet">
+  
+  <style>
+    :root {
+      --cream: #fffcf7;
+      --text-main: #4a3f45;
+    }
+
+    * {
+      box-sizing: border-box;
+      margin: 0;
+      padding: 0;
+      -webkit-tap-highlight-color: transparent;
+      user-select: none;
+    }
+
+    body, html {
+      width: 100%;
+      height: 100dvh;
+      overflow: hidden;
+      font-family: 'Cormorant Garamond', Georgia, serif;
+      background: radial-gradient(circle at 20% 20%, #fff0f5 0%, #eaf6fc 50%, #fdfbf7 100%);
+      color: var(--text-main);
+      position: relative;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+
+    /* Soft Watercolor Paper Wash Overlay */
+    .watercolor-washes {
+      position: absolute;
+      inset: 0;
+      pointer-events: none;
+      z-index: 1;
+      background: 
+        radial-gradient(circle at 15% 80%, rgba(255, 190, 212, 0.45) 0%, transparent 50%),
+        radial-gradient(circle at 85% 25%, rgba(169, 214, 245, 0.45) 0%, transparent 55%),
+        radial-gradient(circle at 50% 50%, rgba(230, 210, 250, 0.35) 0%, transparent 65%);
+      filter: url(#watercolor-wash);
+    }
+
+    /* Fullscreen Interactive Watercolor Flower Garden */
+    #garden-stage {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      z-index: 6;
+      cursor: pointer;
+      overflow: hidden;
+      filter: url(#watercolor-paint);
+    }
+
+    #garden-stage.parted {
+      pointer-events: none;
+    }
+
+    /* Individual Flower Wrapper */
+    .flower-item {
+      position: absolute;
+      bottom: -5vh;
+      transform-origin: bottom center;
+      transition: transform 2.2s cubic-bezier(0.22, 1, 0.36, 1), opacity 2.2s ease;
+      will-change: transform;
+    }
+
+    .flower-bloom-wrap {
+      transform-origin: bottom center;
+      animation: bloomIn 2.2s cubic-bezier(0.22, 1, 0.36, 1) backwards;
+    }
+
+    .flower-sway-wrap {
+      transform-origin: bottom center;
+      animation: breezeSway 4.5s ease-in-out infinite alternate;
+    }
+
+    @keyframes bloomIn {
+      0% { transform: scale(0.05) translateY(120px); opacity: 0; }
+      100% { transform: scale(1) translateY(0); opacity: 1; }
+    }
+
+    @keyframes breezeSway {
+      0% { transform: rotate(-3.5deg); }
+      100% { transform: rotate(3.5deg); }
+    }
+
+    /* Floating Prompt to Tap the Flowers */
+    .garden-prompt {
+      position: absolute;
+      top: 42%;
+      left: 50%;
+      transform: translate(-50%, -50%);
+      z-index: 15;
+      background: rgba(255, 252, 247, 0.88);
+      backdrop-filter: blur(6px);
+      padding: 14px 28px;
+      border-radius: 50px;
+      box-shadow: 
+        0 10px 30px rgba(180, 120, 145, 0.25),
+        0 0 0 2px rgba(244, 151, 182, 0.45) inset;
+      text-align: center;
+      pointer-events: none;
+      opacity: 0;
+      animation: fadePromptIn 1.2s ease 2.2s forwards, floatPulse 2.4s ease-in-out infinite;
+      transition: opacity 0.6s ease, transform 0.6s ease;
+      width: max-content;
+      max-width: 88vw;
+    }
+
+    .garden-prompt.hide {
+      opacity: 0 !important;
+      transform: translate(-50%, -70%) scale(0.85) !important;
+    }
+
+    .garden-prompt h2 {
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(1.6rem, 5.5vw, 2.2rem);
+      color: #d15c83;
+      margin-bottom: 2px;
+    }
+
+    .garden-prompt p {
+      font-size: clamp(0.95rem, 3.6vw, 1.1rem);
+      color: #6b5862;
+      letter-spacing: 0.5px;
+    }
+
+    @keyframes fadePromptIn {
+      to { opacity: 1; }
+    }
+
+    @keyframes floatPulse {
+      0%, 100% { transform: translate(-50%, -50%) scale(1); }
+      50% { transform: translate(-50%, -56%) scale(1.04); }
+    }
+
+    /* Falling Petals Canvas (Above Flowers & Around Postcard) */
+    #petal-canvas {
+      position: absolute;
+      inset: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 12;
+    }
+
+    /* Postcard Stage (Revealed when flowers part) */
+    .postcard-wrapper {
+      position: relative;
+      z-index: 10;
+      width: min(92vw, 460px);
+      perspective: 1600px;
+      opacity: 0;
+      transform: translateY(70px) scale(0.82);
+      pointer-events: none;
+      transition: opacity 1.4s ease 0.35s, transform 1.4s cubic-bezier(0.22, 1, 0.36, 1) 0.35s;
+    }
+
+    .postcard-wrapper.visible {
+      opacity: 1;
+      transform: translateY(0) scale(1);
+      pointer-events: auto;
+    }
+
+    /* Closed Postcard Cover */
+    .postcard-cover {
+      background: var(--cream);
+      border-radius: 20px;
+      padding: 26px 20px;
+      box-shadow: 
+        0 20px 45px rgba(110, 80, 95, 0.22),
+        0 0 0 8px rgba(255, 255, 255, 0.75) inset,
+        0 0 0 10px rgba(244, 151, 182, 0.4) inset;
+      text-align: center;
+      cursor: pointer;
+      transition: transform 0.55s cubic-bezier(0.4, 0, 0.2, 1), opacity 0.45s ease;
+      position: relative;
+      overflow: hidden;
+    }
+
+    /* Flipping state when tapped */
+    .postcard-wrapper.opening .postcard-cover {
+      transform: rotateX(85deg) scale(0.9);
+      opacity: 0;
+      pointer-events: none;
+    }
+
+    /* Removed from flow once open so inside takes full view smoothly */
+    .postcard-wrapper.open .postcard-cover {
+      display: none;
+    }
+
+    .cover-badge {
+      display: inline-block;
+      background: linear-gradient(135deg, #ffdde6, #d9efff);
+      padding: 6px 16px;
+      border-radius: 30px;
+      font-size: 0.85rem;
+      letter-spacing: 1.2px;
+      text-transform: uppercase;
+      margin-bottom: 12px;
+      color: #5c4b56;
+      font-weight: 600;
+    }
+
+    .cover-img-frame {
+      width: 165px;
+      height: 165px;
+      margin: 6px auto 14px;
+      border-radius: 50%;
+      background: #fff;
+      padding: 10px;
+      box-shadow: 0 8px 24px rgba(244, 151, 182, 0.28);
+      border: 2px dashed #f497b6;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      overflow: hidden;
+    }
+
+    .cover-img-frame img {
+      width: 100%;
+      height: 100%;
+      object-fit: contain;
+    }
+
+    .cover-title {
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(1.9rem, 6vw, 2.4rem);
+      color: #d46a8c;
+      margin-bottom: 6px;
+    }
+
+    .tap-hint {
+      font-size: 1.05rem;
+      color: #7c6c75;
+      margin-top: 8px;
+      animation: pulseHint 1.8s infinite;
+    }
+
+    @keyframes pulseHint {
+      0%, 100% { transform: scale(1); opacity: 0.75; }
+      50% { transform: scale(1.05); opacity: 1; }
+    }
+
+    /* Inside of Opened Postcard */
+    .postcard-inside {
+      display: none; /* Crucial: do not take layout space when card is closed */
+      background: var(--cream);
+      border-radius: 20px;
+      padding: clamp(18px, 4.5vw, 28px);
+      max-height: 84dvh;
+      overflow-y: auto;
+      -webkit-overflow-scrolling: touch;
+      overscroll-behavior: contain;
+      box-shadow: 
+        0 22px 55px rgba(95, 70, 85, 0.25),
+        0 0 0 6px rgba(255, 255, 255, 0.9) inset,
+        0 0 0 8px rgba(127, 181, 230, 0.45) inset;
+      position: relative;
+    }
+
+    /* Elegant custom scrollbar for long messages */
+    .postcard-inside::-webkit-scrollbar {
+      width: 5px;
+    }
+    .postcard-inside::-webkit-scrollbar-track {
+      background: rgba(244, 151, 182, 0.1);
+      border-radius: 10px;
+    }
+    .postcard-inside::-webkit-scrollbar-thumb {
+      background: rgba(212, 106, 140, 0.35);
+      border-radius: 10px;
+    }
+
+    .postcard-wrapper.open .postcard-inside {
+      display: block;
+      pointer-events: auto;
+      animation: openInsideCard 0.75s cubic-bezier(0.22, 1, 0.36, 1) forwards;
+    }
+
+    @keyframes openInsideCard {
+      0% {
+        opacity: 0;
+        transform: scale(0.9) rotateX(-18deg);
+      }
+      100% {
+        opacity: 1;
+        transform: scale(1) rotateX(0deg);
+      }
+    }
+
+    .polaroid-row {
+      display: flex;
+      justify-content: center;
+      gap: 14px;
+      margin-bottom: 16px;
+      flex-wrap: wrap;
+    }
+
+    .polaroid {
+      background: #ffffff;
+      padding: 8px 8px 14px;
+      border-radius: 8px;
+      box-shadow: 0 6px 16px rgba(0, 0, 0, 0.09);
+      width: clamp(115px, 35vw, 145px);
+      position: relative;
+    }
+
+    .polaroid:first-child {
+      transform: rotate(-4deg);
+      border-bottom: 3px solid #ffd6e0;
+    }
+
+    .polaroid:last-child {
+      transform: rotate(4deg);
+      border-bottom: 3px solid #cdebf9;
+    }
+
+    .polaroid::before {
+      content: "";
+      position: absolute;
+      top: -7px;
+      left: 50%;
+      transform: translateX(-50%);
+      width: 46px;
+      height: 14px;
+      background: rgba(255, 198, 217, 0.65);
+      border-radius: 2px;
+    }
+
+    .polaroid:last-child::before {
+      background: rgba(173, 219, 247, 0.65);
+    }
+
+    .polaroid img {
+      width: 100%;
+      height: 100px;
+      object-fit: contain;
+      display: block;
+    }
+
+    .polaroid-caption {
+      font-family: 'Dancing Script', cursive;
+      text-align: center;
+      font-size: 0.95rem;
+      color: #7c6872;
+      margin-top: 4px;
+    }
+
+    .message-box {
+      text-align: center;
+      padding: 12px 6px;
+      border-top: 1px dashed rgba(212, 106, 140, 0.35);
+      border-bottom: 1px dashed rgba(127, 181, 230, 0.45);
+    }
+
+    .message-title {
+      font-family: 'Dancing Script', cursive;
+      font-size: clamp(1.7rem, 5.5vw, 2.1rem);
+      color: #c95f82;
+      margin-bottom: 8px;
+    }
+
+    .message-body {
+      font-size: clamp(1.05rem, 4.1vw, 1.2rem);
+      line-height: 1.6;
+      color: var(--text-main);
+      white-space: pre-line;
+      user-select: text;
+    }
+
+    .signature {
+      font-family: 'Dancing Script', cursive;
+      font-size: 1.4rem;
+      color: #6a9bc3;
+      margin-top: 12px;
+      text-align: right;
+      padding-right: 10px;
+    }
+
+    /* Small screen height optimization */
+    @media (max-height: 660px) {
+      .cover-img-frame {
+        width: 125px;
+        height: 125px;
+        margin: 4px auto 8px;
+      }
+      .postcard-cover {
+        padding: 18px 16px;
+      }
+      .cover-title {
+        font-size: 1.8rem;
+      }
+      .polaroid {
+        width: 105px;
+      }
+      .polaroid img {
+        height: 75px;
+      }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- Hidden SVG Filters for Watercolor Painting Texture -->
+  <svg width="0" height="0" style="position:absolute">
+    <defs>
+      <filter id="watercolor-wash">
+        <feTurbulence type="fractalNoise" baseFrequency="0.025" numOctaves="3" result="noise" />
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="20" />
+      </filter>
+      <filter id="watercolor-paint">
+        <feTurbulence type="fractalNoise" baseFrequency="0.04" numOctaves="2" result="noise" />
+        <feDisplacementMap in="SourceGraphic" in2="noise" scale="4.5" />
+      </filter>
+    </defs>
+  </svg>
+
+  <!-- Soft Watercolor Paper Washes -->
+  <div class="watercolor-washes"></div>
+
+  <!-- Lush Full-Screen Bouquet of Watercolor Lilies & Blossoms -->
+  <div id="garden-stage" title="Tap to part the flowers"></div>
+
+  <!-- Prompt to Tap the Bouquet -->
+  <div class="garden-prompt" id="gardenPrompt">
+    <h2>Something Special For You</h2>
+    <p>✨ Tap the flowers to part them ✨</p>
+  </div>
+
+  <!-- Falling Watercolor Petals Canvas -->
+  <canvas id="petal-canvas"></canvas>
+
+  <!-- Postcard Container (Revealed after flowers part) -->
+  <div class="postcard-wrapper" id="postcard">
+    
+    <!-- Front of Postcard (Closed) -->
+    <div class="postcard-cover" id="openCardBtn">
+      <span class="cover-badge">Happy Anniversary Love</span>
+      <div class="cover-img-frame">
+        <img src="Img1.jpg" alt="Dudu giving flowers to Bubu" />
+      </div>
+      <h1 class="cover-title">Flowers For You</h1>
+      <p class="tap-hint">💌 Tap to open your postcard 💌</p>
+    </div>
+
+    <!-- Inside of Postcard (Opened) -->
+    <div class="postcard-inside">
+      <div class="polaroid-row">
+        <div class="polaroid">
+          <img src="Img1.jpg" alt="Dudu giving flowers to Bubu" />
+          <div class="polaroid-caption">For You 🌸</div>
+        </div>
+        <div class="polaroid">
+          <img src="Img2.jpg" alt="Bubu holding a flower" />
+          <div class="polaroid-caption">So Sweet 🌻</div>
+        </div>
+      </div>
+
+      <!-- EDIT YOUR MESSAGE HERE LATER -->
+      <div class="message-box">
+        <h2 class="message-title">Dearest Bubu,</h2>
+        <p class="message-body">
+          Happy 2 Years and 3 Months, My Bubu! Ever since Bubu came into Dudu’s life, everything has become a little more beautiful, like sunshine, flowers, and a thousand little reasons to smile. You’ve filled my heart with so much love and happiness, and Dudu lovessss you sooo sooo soooo muchhhh! You’re my favourite person, my happiest place, and my sweetest little blessing.
+I know we’ve had a few fights recently, and Dudu has said things he shouldn’t have. I’m genuinely sorry. Please forgive your Dudu.
+        </p>
+        <div class="signature">With love -Dudu 💕</div>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    // ==========================================
+    // 1. GENERATE LUSH WATERCOLOR FLOWER GARDEN
+    // ==========================================
+    const gardenStage = document.getElementById('garden-stage');
+    const gardenPrompt = document.getElementById('gardenPrompt');
+    const postcard = document.getElementById('postcard');
+    const openCardBtn = document.getElementById('openCardBtn');
+
+    function getFlowerSVG(type, stemHeight) {
+      const midY = stemHeight * 0.55;
+      const curveX = 95 + (Math.random() * 20 - 10);
+      const stem = `
+        <path d="M100,${stemHeight} Q${curveX},${midY} 100,95" stroke="#7da987" stroke-width="5.5" fill="none" stroke-linecap="round" opacity="0.88"/>
+        <path d="M99,${midY + 25} Q55,${midY - 10} 38,${midY + 12} Q70,${midY + 38} 99,${midY + 25}" fill="#8fbc96" opacity="0.8"/>
+        <path d="M101,${midY - 10} Q145,${midY - 40} 160,${midY - 18} Q130,${midY + 8} 101,${midY - 10}" fill="#84b38e" opacity="0.75"/>
+      `;
+
+      let head = '';
+      if (type === 'pink-lily') {
+        head = `
+          <g transform="translate(100, 92)">
+            <ellipse cx="0" cy="-42" rx="19" ry="50" fill="#ffabc2" opacity="0.78" transform="rotate(-38)"/>
+            <ellipse cx="0" cy="-42" rx="19" ry="50" fill="#ffabc2" opacity="0.78" transform="rotate(38)"/>
+            <ellipse cx="0" cy="-46" rx="21" ry="54" fill="#ff8da9" opacity="0.82"/>
+            <ellipse cx="0" cy="-34" rx="17" ry="42" fill="#ffd1df" opacity="0.88" transform="rotate(-68)"/>
+            <ellipse cx="0" cy="-34" rx="17" ry="42" fill="#ffd1df" opacity="0.88" transform="rotate(68)"/>
+            <ellipse cx="0" cy="-26" rx="14" ry="32" fill="#ffe6ee" opacity="0.9"/>
+            <path d="M0,-12 L-10,-36 M0,-12 L0,-40 M0,-12 L10,-36" stroke="#d95f80" stroke-width="2" opacity="0.75"/>
+            <circle cx="-10" cy="-37" r="3.5" fill="#d95f80"/>
+            <circle cx="0" cy="-41" r="3.5" fill="#d95f80"/>
+            <circle cx="10" cy="-37" r="3.5" fill="#d95f80"/>
+          </g>`;
+      } else if (type === 'blue-lily') {
+        head = `
+          <g transform="translate(100, 92)">
+            <ellipse cx="0" cy="-42" rx="18" ry="48" fill="#99cdf7" opacity="0.78" transform="rotate(-36)"/>
+            <ellipse cx="0" cy="-42" rx="18" ry="48" fill="#99cdf7" opacity="0.78" transform="rotate(36)"/>
+            <ellipse cx="0" cy="-46" rx="20" ry="52" fill="#7bbbf0" opacity="0.82"/>
+            <ellipse cx="0" cy="-34" rx="16" ry="40" fill="#c7e6ff" opacity="0.88" transform="rotate(-66)"/>
+            <ellipse cx="0" cy="-34" rx="16" ry="40" fill="#c7e6ff" opacity="0.88" transform="rotate(66)"/>
+            <ellipse cx="0" cy="-24" rx="12" ry="28" fill="#e8f6ff" opacity="0.92"/>
+            <path d="M0,-12 L-9,-35 M0,-12 L0,-39 M0,-12 L9,-35" stroke="#4f8cc2" stroke-width="2" opacity="0.75"/>
+            <circle cx="-9" cy="-36" r="3.5" fill="#f2c96d"/>
+            <circle cx="0" cy="-40" r="3.5" fill="#f2c96d"/>
+            <circle cx="9" cy="-36" r="3.5" fill="#f2c96d"/>
+          </g>`;
+      } else if (type === 'white-pink-lily') {
+        head = `
+          <g transform="translate(100, 92)">
+            <ellipse cx="0" cy="-40" rx="19" ry="48" fill="#fff5f8" opacity="0.9" transform="rotate(-35)"/>
+            <ellipse cx="0" cy="-40" rx="19" ry="48" fill="#fff5f8" opacity="0.9" transform="rotate(35)"/>
+            <ellipse cx="0" cy="-44" rx="21" ry="50" fill="#ffffff" opacity="0.92"/>
+            <ellipse cx="0" cy="-32" rx="17" ry="40" fill="#ffe3ec" opacity="0.88" transform="rotate(-65)"/>
+            <ellipse cx="0" cy="-32" rx="17" ry="40" fill="#ffe3ec" opacity="0.88" transform="rotate(65)"/>
+            <ellipse cx="0" cy="-36" rx="6" ry="34" fill="#ff9eb8" opacity="0.55"/>
+            <circle cx="-7" cy="-30" r="3" fill="#e68a9e"/>
+            <circle cx="0" cy="-34" r="3" fill="#e68a9e"/>
+            <circle cx="7" cy="-30" r="3" fill="#e68a9e"/>
+          </g>`;
+      } else if (type === 'blue-hydrangea') {
+        head = `
+          <g transform="translate(100, 92)">
+            <circle cx="-24" cy="-14" r="28" fill="#9dd2f7" opacity="0.72"/>
+            <circle cx="24" cy="-14" r="28" fill="#b5e0fc" opacity="0.72"/>
+            <circle cx="0" cy="-36" r="30" fill="#83c3f2" opacity="0.78"/>
+            <circle cx="-18" cy="14" r="25" fill="#cdeaff" opacity="0.82"/>
+            <circle cx="18" cy="14" r="25" fill="#a2d5f7" opacity="0.82"/>
+            <circle cx="0" cy="-8" r="24" fill="#d9f0ff" opacity="0.85"/>
+            <circle cx="-8" cy="-14" r="5" fill="#fff4bd"/>
+            <circle cx="8" cy="-14" r="5" fill="#fff4bd"/>
+            <circle cx="0" cy="-4" r="5" fill="#fff4bd"/>
+          </g>`;
+      } else {
+        head = `
+          <g transform="translate(100, 92)">
+            <circle cx="0" cy="-34" r="24" fill="#dec5f2" opacity="0.78"/>
+            <circle cx="-26" cy="-14" r="24" fill="#f5c6dc" opacity="0.78"/>
+            <circle cx="26" cy="-14" r="24" fill="#d2defa" opacity="0.78"/>
+            <circle cx="-16" cy="16" r="23" fill="#e8d3f7" opacity="0.84"/>
+            <circle cx="16" cy="16" r="23" fill="#ffd9e8" opacity="0.84"/>
+            <circle cx="0" cy="-6" r="12" fill="#ffefb8" opacity="0.92"/>
+          </g>`;
+      }
+
+      return `<svg viewBox="0 0 200 ${stemHeight}" width="100%" height="100%" style="overflow:visible">${stem}${head}</svg>`;
+    }
+
+    const flowerTypes = ['pink-lily', 'blue-lily', 'white-pink-lily', 'blue-hydrangea', 'lavender-blossom'];
+    const flowerElements = [];
+
+    function buildLushGarden() {
+      gardenStage.innerHTML = '';
+      flowerElements.length = 0;
+
+      const layers = [
+        { count: 16, minH: 62, maxH: 86, scale: 0.85, z: 1 },
+        { count: 18, minH: 42, maxH: 65, scale: 1.0,  z: 2 },
+        { count: 16, minH: 22, maxH: 44, scale: 1.12, z: 3 }
+      ];
+
+      layers.forEach((layer) => {
+        for (let i = 0; i < layer.count; i++) {
+          const item = document.createElement('div');
+          item.className = 'flower-item';
+
+          const basePct = (i / (layer.count - 1)) * 106 - 8;
+          const jitter = (Math.random() * 6) - 3;
+          const leftPct = basePct + jitter;
+
+          const vhHeight = layer.minH + Math.random() * (layer.maxH - layer.minH);
+          const svgHeight = Math.round(280 + (vhHeight * 3.2));
+          const type = flowerTypes[Math.floor(Math.random() * flowerTypes.length)];
+          const initialTilt = (Math.random() * 18) - 9;
+
+          item.style.left = `${leftPct}%`;
+          item.style.width = `clamp(135px, 28vw, 230px)`;
+          item.style.height = `${vhHeight}dvh`;
+          item.style.zIndex = layer.z;
+          item.style.marginLeft = `-90px`;
+          item.style.transform = `rotate(${initialTilt}deg) scale(${layer.scale})`;
+
+          const delay = (Math.random() * 1.1).toFixed(2);
+          const swayDur = (3.8 + Math.random() * 2.5).toFixed(2);
+
+          item.innerHTML = `
+            <div class="flower-bloom-wrap" style="animation-delay: ${delay}s; width:100%; height:100%;">
+              <div class="flower-sway-wrap" style="animation-duration: ${swayDur}s; width:100%; height:100%;">
+                ${getFlowerSVG(type, svgHeight)}
+              </div>
+            </div>
+          `;
+
+          gardenStage.appendChild(item);
+          flowerElements.push({
+            el: item,
+            centerPct: leftPct + 5,
+            scale: layer.scale
+          });
+        }
+      });
+    }
+
+    buildLushGarden();
+
+    // ====================================================
+    // 2. FALLING & BURSTING WATERCOLOR PETALS (CANVAS)
+    // ====================================================
+    const canvas = document.getElementById('petal-canvas');
+    const ctx = canvas.getContext('2d');
+    let width, height;
+
+    function resize() {
+      width = canvas.width = window.innerWidth;
+      height = canvas.height = window.innerHeight;
+    }
+    window.addEventListener('resize', resize);
+    resize();
+
+    const petalColors = [
+      'rgba(255, 168, 194, 0.78)',
+      'rgba(255, 209, 223, 0.82)',
+      'rgba(153, 205, 247, 0.78)',
+      'rgba(199, 230, 255, 0.82)',
+      'rgba(232, 211, 247, 0.75)',
+      'rgba(255, 245, 248, 0.85)'
+    ];
+
+    class Petal {
+      constructor(isBurst = false) {
+        this.isBurst = isBurst;
+        this.reset(true);
+      }
+
+      reset(initial = false) {
+        if (this.isBurst) {
+          this.x = (width * 0.15) + Math.random() * (width * 0.7);
+          this.y = (height * 0.2) + Math.random() * (height * 0.65);
+          const dir = this.x < width / 2 ? -1 : 1;
+          this.speedX = dir * (1.2 + Math.random() * 3.8) + (Math.random() * 2 - 1);
+          this.speedY = -2.5 + Math.random() * 4.5;
+          this.gravity = 0.045;
+        } else {
+          this.x = Math.random() * width;
+          this.y = initial ? Math.random() * height : -30;
+          this.speedX = -0.6 + Math.random() * 1.2;
+          this.speedY = 0.8 + Math.random() * 1.4;
+          this.gravity = 0;
+        }
+        this.size = 9 + Math.random() * 13;
+        this.angle = Math.random() * Math.PI * 2;
+        this.spin = -0.03 + Math.random() * 0.06;
+        this.color = petalColors[Math.floor(Math.random() * petalColors.length)];
+        this.opacity = 1;
+      }
+
+      update() {
+        this.speedY += this.gravity;
+        this.x += this.speedX + Math.sin(this.y * 0.015) * 0.5;
+        this.y += this.speedY;
+        this.angle += this.spin;
+
+        if (this.isBurst) {
+          this.speedX *= 0.985;
+        }
+
+        if (this.y > height + 40 || this.x < -50 || this.x > width + 50) {
+          if (this.isBurst) {
+            this.isBurst = false;
+          }
+          this.reset(false);
+        }
+      }
+
+      draw() {
+        ctx.save();
+        ctx.translate(this.x, this.y);
+        ctx.rotate(this.angle);
+        ctx.fillStyle = this.color;
+        ctx.beginPath();
+        ctx.moveTo(0, -this.size * 1.2);
+        ctx.bezierCurveTo(this.size * 0.9, -this.size * 0.5, this.size * 0.9, this.size * 0.7, 0, this.size * 1.2);
+        ctx.bezierCurveTo(-this.size * 0.9, this.size * 0.7, -this.size * 0.9, -this.size * 0.5, 0, -this.size * 1.2);
+        ctx.fill();
+        ctx.restore();
+      }
+    }
+
+    const basePetalCount = window.innerWidth < 600 ? 26 : 42;
+    const petals = Array.from({ length: basePetalCount }, () => new Petal(false));
+
+    function triggerPetalShowerBurst() {
+      const burstCount = window.innerWidth < 600 ? 65 : 95;
+      for (let i = 0; i < burstCount; i++) {
+        petals.push(new Petal(true));
+      }
+    }
+
+    function animatePetals() {
+      ctx.clearRect(0, 0, width, height);
+      petals.forEach(p => {
+        p.update();
+        p.draw();
+      });
+      requestAnimationFrame(animatePetals);
+    }
+    animatePetals();
+
+    // ==========================================================
+    // 3. INTERACTION: PART THE FLOWERS & REVEAL THE POSTCARD
+    // ==========================================================
+    let gardenParted = false;
+
+    function partFlowersAndShowPostcard() {
+      if (gardenParted) return;
+      gardenParted = true;
+
+      gardenStage.classList.add('parted');
+      gardenPrompt.classList.add('hide');
+
+      triggerPetalShowerBurst();
+
+      flowerElements.forEach(({ el, centerPct, scale }) => {
+        const isLeft = centerPct < 50;
+        const distFromCenter = Math.abs(50 - centerPct);
+        const pushVw = (isLeft ? -1 : 1) * (44 + (50 - distFromCenter) * 0.65);
+        const dropVh = 6 + Math.random() * 10;
+        const bendDeg = (isLeft ? -1 : 1) * (25 + Math.random() * 22);
+
+        el.style.transform = `translate(${pushVw}vw, ${dropVh}vh) rotate(${bendDeg}deg) scale(${scale})`;
+      });
+
+      postcard.classList.add('visible');
+    }
+
+    gardenStage.addEventListener('click', partFlowersAndShowPostcard);
+    gardenStage.addEventListener('touchstart', partFlowersAndShowPostcard, { passive: true });
+
+    // Open the Postcard smoothly
+    let cardOpening = false;
+    openCardBtn.addEventListener('click', () => {
+      if (cardOpening) return;
+      cardOpening = true;
+
+      // 1. Flip and fade cover first
+      postcard.classList.add('opening');
+
+      // Extra puff of petals
+      for (let i = 0; i < 30; i++) {
+        petals.push(new Petal(true));
+      }
+
+      // 2. Reveal inside without any jumping
+      setTimeout(() => {
+        postcard.classList.remove('opening');
+        postcard.classList.add('open');
+      }, 420);
+    });
+  </script>
+</body>
+</html>
